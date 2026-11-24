@@ -1150,9 +1150,11 @@ async function fetchProgress(url, cb) {
   const r = await fetch(url); if (!r.ok) throw new Error(url + ' ' + r.status);
   const total = +r.headers.get('content-length') || 0;
   if (!r.body || !total) { const b = await r.arrayBuffer(); cb(1); return b; }
-  const rd = r.body.getReader(); const out = new Uint8Array(total); let got = 0;
-  for (;;) { const { done, value } = await rd.read(); if (done) break; out.set(value, got); got += value.length; cb(got / total); }
-  return out.buffer;
+  // content-length may be the *compressed* size (gzip on GitHub Pages) — collect chunks, never pre-size the buffer.
+  const rd = r.body.getReader(); const parts = []; let got = 0;
+  for (;;) { const { done, value } = await rd.read(); if (done) break; parts.push(value); got += value.length; cb(Math.min(got / total, 1)); }
+  const out = new Uint8Array(got); let o = 0; for (const p of parts) { out.set(p, o); o += p.length; }
+  cb(1); return out.buffer;
 }
 function fail(msg) { const e = $('#err'); e.style.display = 'flex'; e.textContent = msg; }
 })().catch((e) => { console.error(e); const el = document.querySelector('#err'); el.style.display = 'flex'; el.textContent = 'שגיאה בטעינת ההדמיה: ' + e.message; });
