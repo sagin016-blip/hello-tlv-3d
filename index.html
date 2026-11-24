@@ -432,6 +432,96 @@ body.ovl-open #walk2d{opacity:0}
 #gmView .x{position:static}
 #gmOpen2{height:42px;padding:0 20px;border-radius:30px;background:var(--champagne);color:var(--espresso);font-weight:600;display:flex;align-items:center;text-decoration:none;font-size:14px}
 @media (max-width:820px){.walks{left:10px;right:10px;width:auto;top:auto;bottom:200px;height:auto;max-height:calc(100vh - 300px)}#wkList{max-height:40%}}
+
+/* ===================================================== mobile */
+button,a,input{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.sheet-btn{display:none}
+@media (max-width:820px){
+  :root{--sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px);--dock:calc(72px + var(--sb))}
+  canvas#gl{height:100%;width:100%}
+  /* bottom dock: whatsapp · time of day */
+  .wa{bottom:calc(14px + var(--sb))}
+  .timebar{bottom:calc(16px + var(--sb));max-width:calc(100vw - 140px)}
+  .timebar input{width:min(150px,calc(100vw - 230px))}
+  .top{padding-top:calc(14px + var(--st))}
+  .caption{top:calc(96px + var(--st))}
+  #skip{bottom:calc(84px + var(--sb))}
+  /* hamburger: top-right, level with the HELLO TLV logo */
+  .burger{top:calc(11px + var(--st));bottom:auto;right:14px;z-index:26}
+  /* chapter menu → drops down from the top as one vertical list, above every panel */
+  .chapters,.chapters.open{position:fixed;inset:0;top:0;bottom:0;z-index:25;flex-direction:column;flex-wrap:nowrap;align-items:stretch;justify-content:flex-start;gap:0;
+    padding:calc(78px + var(--st)) 30px calc(24px + var(--sb));border-radius:0;background:rgba(20,14,10,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .chapters{transform:translateY(-16px)}
+  .chapters.open{transform:none}
+  .chapters button{flex-direction:row;align-items:center;gap:16px;padding:11px 4px;border-bottom:1px solid rgba(234,211,182,.1);text-shadow:none;opacity:1}
+  .chapters button:hover{transform:none}
+  .chapters button .tx{font-size:clamp(22px,6.6vw,28px);font-weight:600}
+  .chapters button.on .tx{text-shadow:none}
+  body:has(.chapters.open) .wa,body:has(.chapters.open) .timebar,body:has(.chapters.open) .sheet-btn{opacity:0;pointer-events:none}
+  /* 3D labels a touch smaller on phones */
+  .lbl .t{font-size:17px}.lbl .s{font-size:10px}.lbl .d{font-size:10px;padding:1px 7px}.lbl::after{height:24px}
+  /* City chapter: no headline; HELLO TLV label sits ~1cm closer to the project */
+  body[data-ch="city"] .caption{display:none}
+  body[data-ch="city"] .lbl.hero{top:18px}
+  body[data-ch="city"] .lbl.hero::after{height:6px;margin-top:3px}
+  /* info panels collapse behind a small button (rail: "פרטים נוספים", project: "מצאו את הבית שלכם") */
+  .sheet-btn{position:fixed;left:50%;bottom:calc(var(--dock) + 6px);transform:translateX(-50%);z-index:7;display:none;align-items:center;gap:8px;height:42px;padding:0 20px;border-radius:30px;
+    background:var(--champagne);color:var(--espresso);font-size:15px;font-weight:600;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+  .sheet-btn svg{width:16px;height:16px;transition:transform .3s}
+  .sheet-btn.open svg{transform:rotate(180deg)}
+  #railBtn{background:#7b3fe4;color:#fff}
+  body:has(#units.on) #unitsBtn,body:has(#rail.on) #railBtn{display:inline-flex}
+  .units.on:not(.m-open),.rail.on:not(.m-open){opacity:0;pointer-events:none;transform:translateY(24px)}
+  .units.on.m-open,.rail.on.m-open{transition:transform .45s cubic-bezier(.2,.7,.1,1),opacity .35s}
+  /* spec & about: make sure iOS Safari gives them their own touch-scroll layer once opened */
+  .ovl.pg,body #about{visibility:hidden;overflow:hidden;transition:opacity .7s,visibility 0s .7s}
+  .ovl.pg.on,body #about.on{visibility:visible;overflow-y:auto;-webkit-overflow-scrolling:touch;touch-action:pan-y;transition:opacity .7s}
+  /* apartment finder → compact bottom sheet */
+  .units{left:10px;right:10px;width:auto;top:auto;bottom:calc(var(--dock) + 56px);height:min(54dvh,470px);border-radius:20px}
+  .units header{padding:12px 16px 8px}
+  .units header .k{font-size:10px;letter-spacing:.22em}
+  .units header h2{font-size:26px}
+  .site{padding:8px 16px;gap:12px}
+  .site svg{width:96px;height:83px}
+  .site .bi .n{font-size:24px}.site .bi .m{font-size:12px;line-height:1.45}
+  .floors{width:66px;padding:8px 6px}
+  .floors button{height:32px}
+  .cards{padding:10px 12px}
+  .xr{padding:8px 16px}
+  /* light-rail panel → bottom sheet */
+  .rail{bottom:calc(var(--dock) + 56px);max-height:min(50dvh,440px)}
+  /* caption readable over busy map labels */
+  .caption::before{inset:-150px -16px -50px -16px;background:linear-gradient(180deg,rgba(24,17,12,.72) 45%,rgba(24,17,12,0))}
+  /* plans gallery stats → tidy 3×2 grid */
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:14px 8px;width:100%}
+  .stats b{font-size:30px}
+  /* gallery (cinema): one scrollable row of scenes, clear of the WhatsApp button */
+  .cnnav{flex-wrap:nowrap;overflow-x:auto;left:68px;right:10px;bottom:calc(18px + var(--sb));scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .cnnav::-webkit-scrollbar{display:none}
+  .cnnav button{flex:none;white-space:nowrap}
+  #cnCap{bottom:calc(78px + var(--sb))}
+  #cnCap h2{font-size:clamp(34px,10.5vw,48px)}
+  #cnCap p{font-size:14px;line-height:1.5}
+  .cnctl{top:calc(18px + var(--st))}
+  /* sticky page headers (spec / film / about): solid, one line */
+  .ovl .pg-top,body #about .ab-top{background:#1f1813;padding-top:calc(14px + var(--st))}
+  .ovl .pg-top .k,body #about .ab-top .k{font-size:10px;letter-spacing:.12em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .ovl .pg-top img,body #about .ab-top img{flex:none}
+  .ovl{padding-bottom:var(--sb)}
+}
+@media (max-width:820px) and (max-height:760px){
+  body[data-ch="proj"] .caption{display:none}
+  .units{height:calc(100dvh - var(--dock) - 56px - 96px - var(--st))}
+}
+@media (max-width:820px) and (max-height:500px){ /* phone in landscape */
+  .caption{display:none}
+  .units,.rail{left:10px;right:auto;width:min(380px,58vw);top:calc(10px + var(--st));bottom:calc(var(--dock) + 56px);height:auto;max-height:none}
+  .brand img{height:56px}
+  .chapters,.chapters.open{padding:calc(64px + var(--st)) 90px calc(16px + var(--sb))}
+  .chapters button{padding:8px 4px}
+  .chapters button .tx{font-size:21px}
+  .burger{top:calc(6px + var(--st))}
+}
 </style>
 </head>
 <body class="intro">
@@ -508,6 +598,8 @@ body.ovl-open #walk2d{opacity:0}
   </div>
 </aside>
 
+<button class="sheet-btn ui" id="unitsBtn" aria-controls="units" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 15l6-6 6 6"/></svg><span>מצאו את הבית שלכם</span></button>
+<button class="sheet-btn ui" id="railBtn" aria-controls="rail" aria-expanded="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 15l6-6 6 6"/></svg><span>פרטים נוספים</span></button>
 <section id="gmView" aria-label="מפת הליכה">
   <div class="bar2"><h3 id="gmTitle"></h3><a id="gmOpen2" target="_blank" rel="noopener">פתיחה בגוגל מפות</a><button class="x" id="gmClose" aria-label="סגירה">✕</button></div>
   <div class="big"><iframe id="gmBig" title="מפת הליכה" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe></div>

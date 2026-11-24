@@ -730,6 +730,7 @@ function onTap(cx, cy) {
     if (CH[chapter]?.id !== 'proj') goChapter(CH.findIndex((c) => c.id === 'proj'));
     if (sel.b !== h.i) selectBuilding(h.i, false);
     selectFloor(h.f, true);
+    window.HELLO_SHEET?.open('units');
     firePulse(h.p[0], h.p[2], 0.5);
     return;
   }
@@ -751,6 +752,8 @@ function startIntro() {
   document.body.classList.add('intro'); introDone = false;
   Object.assign(cam, { yaw: 40 * D2R, pitch: 17 * D2R, dist: 640, t: [-20, 45, -20] });
   Object.assign(camT, { yaw: 43 * D2R, pitch: 20 * D2R, dist: 560, t: [-40, 34, -40] });
+  // phones: start already aimed at the final framing so the camera only dollies in and the logo stays centred
+  if (innerWidth <= 820) Object.assign(cam, { yaw: camT.yaw, pitch: camT.pitch, t: camT.t.slice() });
   todV = todT = 0.48; todEl.value = 480; ringsT = rings = 0; dimT = dim = 0; sel.on = false;
   $('#units').classList.remove('on');
   // logo plane in front of the opening camera
@@ -1024,7 +1027,7 @@ function drawRail(P, t) {
 let paused = false;
 window.HELLO = {
   pause: (v) => { paused = v; if (v) stopTour(); },
-  showUnit: (bi, f) => { goChapter(CH.findIndex((c) => c.id === 'proj')); setTimeout(() => { selectBuilding(bi, false); selectFloor(f, true); }, 60); },
+  showUnit: (bi, f) => { goChapter(CH.findIndex((c) => c.id === 'proj')); setTimeout(() => { selectBuilding(bi, false); selectFloor(f, true); window.HELLO_SHEET?.open('units'); }, 60); },
 };
 function frame() {
   if (paused) { lastT = now(); requestAnimationFrame(frame); return; }
@@ -1191,4 +1194,27 @@ function fail(msg) { const e = $('#err'); e.style.display = 'flex'; e.textConten
   menu.addEventListener('click', (e) => { if (e.target.closest('button')) set(false); });
   document.addEventListener('pointerdown', (e) => { if (menu.classList.contains('open') && !menu.contains(e.target) && !btn.contains(e.target)) set(false); });
   addEventListener('keydown', (e) => { if (e.key === 'Escape') set(false); });
+})();
+
+/* ---------------------------------------------------- phone: info panels collapse behind a small button */
+(() => {
+  const SHEETS = {
+    units: { panel: document.getElementById('units'), btn: document.getElementById('unitsBtn'), label: 'מצאו את הבית שלכם' },
+    rail: { panel: document.getElementById('rail'), btn: document.getElementById('railBtn'), label: 'פרטים נוספים' },
+  };
+  const paint = (s) => {
+    const open = s.panel.classList.contains('m-open');
+    s.btn.classList.toggle('open', open); s.btn.setAttribute('aria-expanded', open);
+    s.btn.querySelector('span').textContent = open ? 'סגירה' : s.label;
+  };
+  const set = (k, on) => { const s = SHEETS[k]; if (!s.panel || !s.btn) return; s.panel.classList.toggle('m-open', on); paint(s); };
+  for (const [k, s] of Object.entries(SHEETS)) {
+    if (!s.panel || !s.btn) continue;
+    s.btn.addEventListener('click', () => set(k, !s.panel.classList.contains('m-open')));
+    // leaving the chapter (panel loses .on) collapses it again
+    new MutationObserver(() => { if (!s.panel.classList.contains('on') && s.panel.classList.contains('m-open')) set(k, false); })
+      .observe(s.panel, { attributes: true, attributeFilter: ['class'] });
+    paint(s);
+  }
+  window.HELLO_SHEET = { open: (k) => set(k, true), close: (k) => set(k, false) };
 })();
