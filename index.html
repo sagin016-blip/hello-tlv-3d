@@ -436,6 +436,8 @@ body.ovl-open #walk2d{opacity:0}
 /* ===================================================== mobile */
 button,a,input{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .sheet-btn{display:none}
+/* while the 3D city downloads, nothing else competes for the bandwidth: page images (renders, plans) load after it */
+body.boot .ovl{display:none!important}
 @media (max-width:820px),(pointer:coarse) and (max-height:500px){
   :root{--sb:env(safe-area-inset-bottom,0px);--st:env(safe-area-inset-top,0px);--dock:calc(72px + var(--sb))}
   canvas#gl{height:100%;width:100%}
@@ -544,7 +546,7 @@ button,a,input{-webkit-tap-highlight-color:transparent;touch-action:manipulation
 }
 </style>
 </head>
-<body class="intro">
+<body class="intro boot">
 <canvas id="gl"></canvas>
 <div id="vignette"></div>
 <div id="grain"></div>
@@ -694,7 +696,7 @@ button,a,input{-webkit-tap-highlight-color:transparent;touch-action:manipulation
   <div class="cnbar"><i id="cnBar"></i></div>
 </section>
 
-<script src="app.js?v=30"></script>
+<script src="app.js?v=31"></script>
 <script src="apartments.js"></script>
 <script src="about.js?v=7"></script>
 <script src="pages.js?v=3"></script>

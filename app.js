@@ -15,17 +15,34 @@ const META = await (await fetch('scene.json')).json();
 const WALKS = await fetch('assets/walks.json').then((r) => r.json()).catch(() => null);
 const RAIL = await fetch('assets/rail.json?v=1').then((r) => r.json()).catch(() => null);
 const LOAD_T0 = performance.now();
-const buf = await fetchProgress('scene.bin', (p) => { $('#pgBar').style.width = (p * 35).toFixed(1) + '%'; });
+// packed scene (src/pack_scene.py): 16-bit positions per group + planar colours — ~45% less to download
+const PACKED = !!(META.packed && META.qpos);
+const buf = await fetchProgress(PACKED ? META.packed : 'scene.bin', (p) => { $('#pgBar').style.width = (p * 35).toFixed(1) + '%'; }, PACKED ? META.packed_bytes : META.count * 27 + META.nproj * 8);
 $('#pgTxt').textContent = 'מרכיבים את העיר';
 await new Promise((r) => setTimeout(r, 30));
 
 const N = META.count, NP = META.nproj;
-let o = 0;
-const pos = new Float32Array(buf, 0, N * 3); o += N * 12;
-const scl = new Uint8Array(buf, o, N * 3); o += N * 3;
-const qt = new Uint8Array(buf, o, N * 4); o += N * 4;
-const rgba = new Uint8Array(buf, o, N * 4); o += N * 4;
-const mt = new Uint8Array(buf, o, N * 4); o += N * 4;
+let o = 0, pos, scl, qt, rgba, mt;
+if (PACKED) {
+  const u8 = new Uint8Array(buf), P = 6 * N;
+  scl = new Uint8Array(buf, P, N * 3); qt = new Uint8Array(buf, P + N * 3, N * 4);
+  const rp = P + N * 7; mt = new Uint8Array(buf, P + N * 11, N * 4); o = P + N * 15;
+  rgba = new Uint8Array(N * 4); pos = new Float32Array(N * 3);
+  const LO = META.qpos.lo, K = META.qpos.k;
+  for (let i = 0; i < N; i++) {
+    const g = mt[i * 4], lo = LO[g], k = K[g];
+    pos[i * 3] = lo[0] + (u8[i] | (u8[N + i] << 8)) * k[0];
+    pos[i * 3 + 1] = lo[1] + (u8[2 * N + i] | (u8[3 * N + i] << 8)) * k[1];
+    pos[i * 3 + 2] = lo[2] + (u8[4 * N + i] | (u8[5 * N + i] << 8)) * k[2];
+    rgba[i * 4] = u8[rp + i]; rgba[i * 4 + 1] = u8[rp + N + i]; rgba[i * 4 + 2] = u8[rp + 2 * N + i]; rgba[i * 4 + 3] = u8[rp + 3 * N + i];
+  }
+} else {
+  pos = new Float32Array(buf, 0, N * 3); o += N * 12;
+  scl = new Uint8Array(buf, o, N * 3); o += N * 3;
+  qt = new Uint8Array(buf, o, N * 4); o += N * 4;
+  rgba = new Uint8Array(buf, o, N * 4); o += N * 4;
+  mt = new Uint8Array(buf, o, N * 4); o += N * 4;
+}
 const logoXY = new Int16Array(buf.slice(o, o + NP * 4)); o += NP * 4;
 const logoC = new Uint8Array(buf, o, NP * 4);
 
@@ -1146,9 +1163,9 @@ function frame() {
   requestAnimationFrame(frame);
 }
 
-// keep the opening screen ~5 s longer, the line keeps filling right-to-left
+// short finish of the loading line (was 5 s) — the line keeps filling right-to-left
 await new Promise((res) => {
-  const from = parseFloat($('#pgBar').style.width) || 35, t0 = performance.now(), HOLD = 5000;
+  const from = parseFloat($('#pgBar').style.width) || 35, t0 = performance.now(), HOLD = 1500;
   $('#pgBar').style.transition = 'none';
   (function tick() {
     const k = Math.min(1, (performance.now() - t0) / HOLD), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
@@ -1157,13 +1174,16 @@ await new Promise((res) => {
   })();
 });
 $('#loader').classList.add('out');
+document.body.classList.remove('boot'); // now let the page images load
 startIntro();
 requestAnimationFrame(frame);
 
 /* ---------------------------------------------------------------- helpers */
-async function fetchProgress(url, cb) {
+async function fetchProgress(url, cb, rawBytes = 0) {
   const r = await fetch(url); if (!r.ok) throw new Error(url + ' ' + r.status);
-  const total = +r.headers.get('content-length') || 0;
+  // progress against the real (uncompressed) size — content-length is the gzip size on GitHub Pages,
+  // which made the bar sit frozen at 35% for most of the download
+  const total = rawBytes || +r.headers.get('content-length') || 0;
   if (!r.body || !total) { const b = await r.arrayBuffer(); cb(1); return b; }
   // content-length may be the *compressed* size (gzip on GitHub Pages) — collect chunks, never pre-size the buffer.
   const rd = r.body.getReader(); const parts = []; let got = 0;
