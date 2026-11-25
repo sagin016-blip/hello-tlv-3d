@@ -669,7 +669,6 @@ canvas.addEventListener('pointermove', (e) => {
   const dx = e.clientX - prev[0], dy = e.clientY - prev[1];
   ptrs.set(e.pointerId, [e.clientX, e.clientY]);
   if (Math.hypot(e.clientX - downX, e.clientY - downY) > 4) moved = true;
-  if (MOB() && CH[chapter]?.rail) return; // phones: the light-rail map is a fixed, phone-framed view
   if (ptrs.size === 2) {
     const [a, b] = [...ptrs.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
     if (pinch0 > 0) camT.dist = clampD(camT.dist * pinch0 / d); pinch0 = d; return;
