@@ -73,7 +73,7 @@ const css = `
 #film .k{font-size:13px;letter-spacing:.32em;color:var(--copper);margin-bottom:16px}
 #film h1{font-family:var(--display);font-weight:400;font-size:clamp(54px,9vw,150px);line-height:.95}
 #film h1 em{font-style:normal;color:var(--champagne)}
-@media (max-width:820px){
+@media (max-width:820px),(pointer:coarse) and (max-height:500px){
   #spec .sp-sec,#spec .sp-sec:nth-of-type(even){grid-template-columns:1fr;min-height:0}
   #spec .sp-sec:nth-of-type(even) .sp-txt{order:0}
   #spec .sp-img{min-height:38vh}

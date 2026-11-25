@@ -1,4 +1,6 @@
 'use strict';
+/* phone layout: narrow screens, plus touch phones held in landscape (wider than 820px but short) */
+const isPhone = () => innerWidth <= 820 || matchMedia('(pointer:coarse) and (max-height:500px)').matches;
 /* HELLO TLV — real-time Gaussian splat renderer + story. No external engine. */
 (async function () {
 const $ = (s) => document.querySelector(s);
@@ -417,11 +419,18 @@ function basis(eye, tgt) {
   return { f, r, d, u: [-d[0], -d[1], -d[2]] };
 }
 let W = 1, H = 1, DPR = Math.min(window.devicePixelRatio || 1, 1.5);
+const MOB = isPhone;
 function resize() {
   W = Math.floor(innerWidth * DPR); H = Math.floor(innerHeight * DPR);
   canvas.width = W; canvas.height = H;
+  // phones: pin the CSS size to the real visible area (iOS 100vh ≠ innerHeight) so the 3D map and the
+  // 2D overlay (purple line, labels) share exactly the same pixels and never drift apart
+  const ov = document.getElementById('walk2d');
+  for (const el of [canvas, ov]) if (el) { el.style.width = MOB() ? innerWidth + 'px' : ''; el.style.height = MOB() ? innerHeight + 'px' : ''; }
 }
 addEventListener('resize', resize); resize();
+addEventListener('orientationchange', () => setTimeout(resize, 250));
+window.visualViewport?.addEventListener('resize', () => { if (MOB()) resize(); });
 function matrices(eye, B) {
   const { r, d, f } = B;
   const view = new Float32Array([r[0], d[0], f[0], 0, r[1], d[1], f[1], 0, r[2], d[2], f[2], 0, -dot(r, eye), -dot(d, eye), -dot(f, eye), 1]);
@@ -470,7 +479,7 @@ const CH = [
   { id: 'loc', n: '02', name: 'המיקום', cam: { t: [-520, 0, -540], yaw: 30, pitch: 57, dist: 2700 }, tod: 0.4, rings: 1, dim: 0, labels: 'all', orbit: 0.005, fog: 0.4,
     k: 'הכל במרחק הליכה', h: ['כל מה שצריך —', '<em>במרחק הליכה.</em>'],
     p: [distLine('תחנת רכבת השלום'), distLine('קניון עזריאלי'), distLine('מתחם שרונה'), distLine('פארק וולפסון')].filter(Boolean).join(' · ') + '<br>טבעות האור: 500 מ׳ · 1 ק״מ · 1.5 ק״מ · 2 ק״מ (מרחק אווירי)' },
-  { id: 'rail', n: '03', name: 'הרכבת הקלה', cam: { t: [250, 0, 330], yaw: 200, pitch: 31, dist: 1150 }, camM: { t: [200, 0, -470], yaw: 196, pitch: 62, dist: 2900 }, tod: 0.42, rings: 0, dim: 0, labels: 'none', orbit: 0, fog: 0.35, rail: true,
+  { id: 'rail', n: '03', name: 'הרכבת הקלה', cam: { t: [250, 0, 330], yaw: 200, pitch: 31, dist: 1150 }, camM: { t: [210, 0, 240], yaw: 196, pitch: 60, dist: 2300 }, tod: 0.42, rings: 0, dim: 0, labels: 'none', orbit: 0, fog: 0.35, rail: true,
     k: 'הקו הסגול · רכבת קלה', h: ['הרכבת הקלה —', '<em>רק 900 מ׳ מהבית.</em>'],
     p: 'תחנת <b>המאבק</b> של הקו הסגול נמצאת על דרך השלום — כ-700 מ׳, <b>9 דקות הליכה</b> מהבית. משם ישירות להגנה, לאלנבי, לדיזנגוף ולארלוזורוב.' },
   { id: 'proj', n: '04', name: 'הפרויקט', cam: { t: [2, 20, 0], yaw: 224, pitch: 17, dist: 200 }, tod: 0.48, rings: 0, dim: 0.4, labels: 'bld', orbit: 0.028, panel: true,
@@ -497,7 +506,7 @@ function goChapter(i) {
   chapter = i; const c = CH[i];
   clearTimeout(afterTimer); if (c.after) afterTimer = setTimeout(() => { if (chapter === i) c.after(); }, 3600);
   [...nav.children].forEach((b, j) => b.classList.toggle('on', j === i));
-  const cc = (innerWidth <= 820 && c.camM) || c.cam;
+  const cc = (isPhone() && c.camM) || c.cam;
   Object.assign(camT, { yaw: cc.yaw * D2R, pitch: cc.pitch * D2R, dist: cc.dist, t: [...cc.t] });
   unwrapYaw();
   if (!userTod || c.id === 'night' || CH[prevCh]?.id === 'night') { todT = c.tod; }
@@ -660,6 +669,7 @@ canvas.addEventListener('pointermove', (e) => {
   const dx = e.clientX - prev[0], dy = e.clientY - prev[1];
   ptrs.set(e.pointerId, [e.clientX, e.clientY]);
   if (Math.hypot(e.clientX - downX, e.clientY - downY) > 4) moved = true;
+  if (MOB() && CH[chapter]?.rail) return; // phones: the light-rail map is a fixed, phone-framed view
   if (ptrs.size === 2) {
     const [a, b] = [...ptrs.values()]; const d = Math.hypot(a[0] - b[0], a[1] - b[1]);
     if (pinch0 > 0) camT.dist = clampD(camT.dist * pinch0 / d); pinch0 = d; return;
@@ -753,7 +763,7 @@ function startIntro() {
   Object.assign(cam, { yaw: 40 * D2R, pitch: 17 * D2R, dist: 640, t: [-20, 45, -20] });
   Object.assign(camT, { yaw: 43 * D2R, pitch: 20 * D2R, dist: 560, t: [-40, 34, -40] });
   // phones: start already aimed at the final framing so the camera only dollies in and the logo stays centred
-  if (innerWidth <= 820) Object.assign(cam, { yaw: camT.yaw, pitch: camT.pitch, t: camT.t.slice() });
+  if (isPhone()) Object.assign(cam, { yaw: camT.yaw, pitch: camT.pitch, t: camT.t.slice() });
   todV = todT = 0.48; todEl.value = 480; ringsT = rings = 0; dimT = dim = 0; sel.on = false;
   $('#units').classList.remove('on');
   // logo plane in front of the opening camera
@@ -782,7 +792,7 @@ function endIntro() {
 /* ---------------------------------------------------------------- frame */
 let lastT = now(), fpsAcc = 0, fpsN = 0;
 /* ---------------------------------------------------------------- walking routes */
-const walkCv = document.createElement('canvas'); walkCv.id = 'walk2d'; canvas.after(walkCv);
+const walkCv = document.createElement('canvas'); walkCv.id = 'walk2d'; canvas.after(walkCv); resize();
 const wctx = walkCv.getContext('2d');
 const WCOL = { park: '#9be08f', station: '#a9c8ff', azrieli: '#f2b48d', sarona: '#f0d9a8', beach: '#7fe0ea' };
 const wk = { on: false, sel: -1, t0: 0 };
@@ -831,6 +841,7 @@ function selectWalk(i) {
 }
 function drawWalks(eye, B, fy, t) {
   const w = innerWidth, h = innerHeight, dpr = Math.min(devicePixelRatio || 1, 2);
+  if (MOB() && (Math.floor(w * DPR) !== W || Math.floor(h * DPR) !== H)) resize(); // iOS toolbar show/hide without a resize event
   if (walkCv.width !== Math.round(w * dpr) || walkCv.height !== Math.round(h * dpr)) { walkCv.width = Math.round(w * dpr); walkCv.height = Math.round(h * dpr); }
   wctx.setTransform(1, 0, 0, 1, 0, 0); wctx.clearRect(0, 0, walkCv.width, walkCv.height);
   if (!(wk.on && WALKS) && !rl.on) return;
@@ -904,6 +915,7 @@ if (RAIL) {
 function railPanel(on) { rl.on = on && !!RAIL; $('#rail').classList.toggle('on', rl.on); document.body.classList.toggle('rail-on', rl.on); if (rl.on) rl.t0 = now(); }
 function pill(x, y, txt, sub, o = {}) {
   const c = wctx; c.save(); c.direction = 'rtl'; c.textAlign = 'center';
+  if (MOB()) { c.translate(x, y); c.scale(0.7, 0.7); x = 0; y = 0; } // phones: signs 30% smaller
   const f1 = `700 ${o.big ? 24 : 17}px Almoni, sans-serif`, f2 = `600 ${o.big ? 13 : 11}px Almoni, sans-serif`;
   c.font = f1; const w1 = c.measureText(txt).width; c.font = f2; const w2 = sub ? c.measureText(sub).width : 0;
   const W = Math.max(w1, w2) + (o.big ? 34 : 22), H = (o.big ? 34 : 25) + (sub ? (o.big ? 17 : 14) : 0), r = 10, tip = 9;
@@ -956,8 +968,8 @@ function drawTrams(P, t) {
     c.restore();
     const mid = pt((N * (CAR + GAP)) / 2);
     if (mid) {
-      c.save(); c.direction = 'rtl'; c.textAlign = 'center'; c.font = '700 14px Almoni, sans-serif';
-      c.fillStyle = '#fff'; c.shadowColor = 'rgba(30,10,60,.95)'; c.shadowBlur = 8; c.fillText('רכבת קלה', mid[0], mid[1] - 18); c.restore();
+      c.save(); c.direction = 'rtl'; c.textAlign = 'center'; c.font = `700 ${MOB() ? 10 : 14}px Almoni, sans-serif`;
+      c.fillStyle = '#fff'; c.shadowColor = 'rgba(30,10,60,.95)'; c.shadowBlur = 8; c.fillText('רכבת קלה', mid[0], mid[1] - (MOB() ? 13 : 18)); c.restore();
     }
   }
 }
@@ -1004,9 +1016,10 @@ function drawRail(P, t) {
       c.beginPath(); c.arc(q[0], q[1], rr, 0, Math.PI * 2); c.stroke(); c.globalAlpha = 1;
       pill(q[0], q[1], 'תחנת המאבק', 'הקו הסגול · התחנה הקרובה לבית', { big: true, fill: 'rgba(91,43,184,.96)', stroke: PURPLE_HI, lift: 8 });
     } else {
-      c.save(); c.direction = 'rtl'; c.textAlign = 'center'; c.font = '700 16px Almoni, sans-serif';
-      c.fillStyle = '#fff'; c.shadowColor = 'rgba(0,0,0,.85)'; c.shadowBlur = 7; c.fillText(s.name, q[0], q[1] - 13);
-      if (s.sub) { c.font = '600 11px Almoni, sans-serif'; c.fillStyle = '#d9c2ff'; c.fillText(s.sub, q[0], q[1] + 22); }
+      const k = MOB() ? 0.7 : 1;
+      c.save(); c.direction = 'rtl'; c.textAlign = 'center'; c.font = `700 ${16 * k}px Almoni, sans-serif`;
+      c.fillStyle = '#fff'; c.shadowColor = 'rgba(0,0,0,.85)'; c.shadowBlur = 7; c.fillText(s.name, q[0], q[1] - 13 * k);
+      if (s.sub) { c.font = `600 ${11 * k}px Almoni, sans-serif`; c.fillStyle = '#d9c2ff'; c.fillText(s.sub, q[0], q[1] + 22 * k); }
       c.restore();
     }
   }
@@ -1168,7 +1181,7 @@ function fail(msg) { const e = $('#err'); e.style.display = 'flex'; e.textConten
   const units = document.getElementById('units'), walks = document.getElementById('walks'), rail = document.getElementById('rail');
   function fit() {
     cap.style.right = ''; cap.style.maxWidth = '';
-    if (innerWidth <= 820) return;                       // phone layout has its own placement
+    if (isPhone()) return;                       // phone layout has its own placement
     if (!menu.classList.contains('open')) return;         // menu closed (hamburger)
     const m = menu.getBoundingClientRect();
     const capTop = innerHeight - 104 - cap.offsetHeight;  // caption is bottom-anchored (bottom:104px)

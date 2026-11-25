@@ -56,7 +56,7 @@ const css = `
 #about .ab-sec.in .ab-txt > :nth-child(n+4){transition-delay:.32s}
 #about .ab-foot{padding:56px 26px 72px;text-align:center;border-top:1px solid var(--line);color:var(--ink-dim);font-size:13px;letter-spacing:.08em}
 #about .ab-foot button{margin-top:18px;padding:12px 26px;border-radius:999px;border:1px solid var(--champagne);color:var(--espresso);background:var(--champagne);font-weight:600;letter-spacing:.04em}
-@media (max-width:820px){
+@media (max-width:820px),(pointer:coarse) and (max-height:500px){
   #about .ab-sec,#about .ab-sec:nth-child(even){grid-template-columns:1fr;min-height:0}
   #about .ab-sec:nth-child(even) .ab-txt{order:0}
   #about .ab-img{min-height:46vh}
