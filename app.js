@@ -477,7 +477,8 @@ function tod(t) {
   const night = Math.min(1, Math.max(0, (t - 0.6) / 0.2));
   return { dir, sun: lerp3(A.sun, B.sun, k).map((v) => v * Math.max(0.0, Math.min(1, (el + 6) / 8) * (1 - night) + night)), sky: lerp3(A.sky, B.sky, k), gnd: lerp3(A.gnd, B.gnd, k), fog: lerp3(A.fog, B.fog, k), fog2: lerp3(A.fog2, B.fog2, k), zen: lerp3(A.zen, B.zen, k), den: lerp(A.den, B.den, k), exp: lerp(A.exp, B.exp, k), night: night * night * (3 - 2 * night) };
 }
-let todV = 0.48, todT = 0.48;
+const DUSK = 0.585; // opening light: sunset over Tel Aviv ("דמדומים")
+let todV = DUSK, todT = DUSK;
 const todEl = $('#tod');
 todEl.addEventListener('input', () => { todT = todV = todEl.value / 1000; userTod = true; });
 let userTod = false;
@@ -490,7 +491,7 @@ const fmtD = (d) => d >= 1000 ? (d / 1000).toFixed(1) + ' ק״מ' : Math.round(d
 const walk = (d) => Math.max(2, Math.round(d * 1.3 / 80));
 const distLine = (n) => { const l = byName(n); return l ? `${n} <b>${fmtD(l.dist)}</b>` : ''; };
 const CH = [
-  { id: 'city', n: '01', name: 'העיר', cam: { t: [-40, 34, -40], yaw: 43, pitch: 20, dist: 600 }, tod: 0.48, rings: 0, dim: 0, labels: 'land', orbit: 0.010, hold: 10500,
+  { id: 'city', n: '01', name: 'העיר', cam: { t: [-40, 34, -40], yaw: 127, pitch: 14, dist: 600 }, camM: { t: [0, 30, 0], yaw: 117, pitch: 14, dist: 600 }, tod: DUSK, rings: 0, dim: 0, labels: 'land', orbit: 0.010, hold: 10500,
     k: 'אורון רובע השלום', h: ['יש ערים שחיים בהן.', '<em>ויש עיר שחיים אותה.</em>'],
     p: 'רובע חדש במפגש תל אביב–גבעתיים, על דרך השלום — בין מגדלי עזריאלי ושרונה לבין הירוק של פארק וולפסון.' },
   { id: 'loc', n: '02', name: 'המיקום', cam: { t: [-520, 0, -540], yaw: 30, pitch: 57, dist: 2700 }, tod: 0.4, rings: 1, dim: 0, labels: 'all', orbit: 0.005, fog: 0.4,
@@ -776,11 +777,13 @@ let introStart = 0, introDone = false, altOff = false;
 const logo = { c: [0, 0, 0], r: [1, 0, 0], u: [0, 1, 0] };
 function startIntro() {
   document.body.classList.add('intro'); introDone = false;
-  Object.assign(cam, { yaw: 40 * D2R, pitch: 17 * D2R, dist: 640, t: [-20, 45, -20] });
-  Object.assign(camT, { yaw: 43 * D2R, pitch: 20 * D2R, dist: 560, t: [-40, 34, -40] });
-  // phones: start already aimed at the final framing so the camera only dollies in and the logo stays centred
-  if (isPhone()) Object.assign(cam, { yaw: camT.yaw, pitch: camT.pitch, t: camT.t.slice() });
-  todV = todT = 0.48; todEl.value = 480; ringsT = rings = 0; dimT = dim = 0; sel.on = false;
+  // opening frame faces west, into the sunset over the sea (same heading as the City chapter)
+  Object.assign(cam, { yaw: 124 * D2R, pitch: 11 * D2R, dist: 640, t: [-20, 45, -20] });
+  Object.assign(camT, { yaw: 127 * D2R, pitch: 14 * D2R, dist: 560, t: [-40, 34, -40] });
+  // phones: aim at the phone framing of the City chapter (project centred, sun in frame) and start already
+  // pointed there, so the camera only dollies in and the logo stays centred
+  if (isPhone()) { const m = CH[0].camM; Object.assign(camT, { yaw: m.yaw * D2R, pitch: m.pitch * D2R, t: m.t.slice() }); Object.assign(cam, { yaw: camT.yaw, pitch: camT.pitch, t: camT.t.slice() }); }
+  todV = todT = DUSK; todEl.value = Math.round(DUSK * 1000); ringsT = rings = 0; dimT = dim = 0; sel.on = false;
   $('#units').classList.remove('on');
   // logo plane in front of the opening camera
   const eye = eyeOf(cam), B = basis(eye, cam.t);
