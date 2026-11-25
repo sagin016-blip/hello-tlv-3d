@@ -1230,3 +1230,25 @@ function fail(msg) { const e = $('#err'); e.style.display = 'flex'; e.textConten
   }
   window.HELLO_SHEET = { open: (k) => set(k, true), close: (k) => set(k, false) };
 })();
+
+/* ---------------------------------------------------- phone: long pages scroll the document — start at the top, leave it at the top */
+(() => {
+  const LONG = '#plansView,#spec,#about,#aptView';
+  let listY = 0; // where the apartments list was when an apartment was opened from it (tracked while scrolling —
+  // by the time the apartment page opens the list is already hidden and the browser has reset the scroll)
+  const pv = () => document.getElementById('plansView'), av = () => document.getElementById('aptView');
+  addEventListener('scroll', () => { if (pv()?.classList.contains('on') && !av()?.classList.contains('on')) listY = scrollY; }, { passive: true });
+  new MutationObserver((muts) => {
+    if (!isPhone()) return;
+    for (const m of muts) {
+      const el = m.target;
+      if (!el.matches?.(LONG)) continue;
+      const was = (m.oldValue || '').split(/\s+/).includes('on'), is = el.classList.contains('on');
+      if (was === is) continue;
+      if (el.id === 'aptView') {
+        if (is) { if (!pv().classList.contains('on')) listY = 0; window.scrollTo(0, 0); }
+        else requestAnimationFrame(() => window.scrollTo(0, document.getElementById('plansView').classList.contains('on') ? listY : 0));
+      } else { if (el.id === 'plansView') listY = 0; window.scrollTo(0, 0); }
+    }
+  }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ['class'], attributeOldValue: true });
+})();

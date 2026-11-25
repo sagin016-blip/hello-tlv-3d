@@ -482,6 +482,20 @@ button,a,input{-webkit-tap-highlight-color:transparent;touch-action:manipulation
   .ovl.pg,body #about,#plansView{overflow:hidden}
   .ovl.pg.on,body #about.on,#plansView.on{overflow-x:hidden;overflow-y:scroll;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior-y:contain}
   .ovl.on .filters{touch-action:pan-x pan-y}
+  /* long pages (apartments · spec · about) scroll as the PAGE itself, not inside a fixed layer —
+     the only kind of scrolling iPhone Safari never drops */
+  html:has(#plansView.on),html:has(#spec.on),html:has(#about.on){height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  html:has(#plansView.on) body,html:has(#spec.on) body,html:has(#about.on) body{height:auto;min-height:100%;overflow:visible}
+  #plansView.on,#spec.on,body #about.on{position:absolute;top:0;right:0;left:0;bottom:auto;min-height:100%;overflow:visible!important;touch-action:auto!important}
+  #plansView.on > .x{position:fixed}
+  /* single apartment: 3D view on top, all details + buttons below, scrolling as the page */
+  html:has(#aptView.on){height:auto;min-height:100%;overflow-x:hidden;overflow-y:auto}
+  html:has(#aptView.on) body{height:auto;min-height:100%;overflow:visible}
+  html:has(#aptView.on) #plansView{display:none}
+  #aptView.on{position:absolute;top:0;right:0;left:0;bottom:auto;min-height:100%;overflow:visible}
+  #aptView.on .apt{position:relative;inset:auto;min-height:100%;grid-template-rows:56vh auto}
+  #aptView.on .apt .side{overflow:visible}
+  #aptView.on > .x{position:fixed}
   /* apartment finder → compact bottom sheet */
   .units{left:10px;right:10px;width:auto;top:auto;bottom:calc(var(--dock) + 56px);height:min(54dvh,470px);border-radius:20px}
   .units header{padding:12px 16px 8px}
@@ -680,7 +694,7 @@ button,a,input{-webkit-tap-highlight-color:transparent;touch-action:manipulation
   <div class="cnbar"><i id="cnBar"></i></div>
 </section>
 
-<script src="app.js?v=27"></script>
+<script src="app.js?v=30"></script>
 <script src="apartments.js"></script>
 <script src="about.js?v=7"></script>
 <script src="pages.js?v=3"></script>
